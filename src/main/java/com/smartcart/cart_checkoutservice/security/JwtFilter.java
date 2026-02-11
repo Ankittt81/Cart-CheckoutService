@@ -28,7 +28,8 @@ public class JwtFilter extends OncePerRequestFilter {
             httpServletResponse(response);
             return;
         }
-        String token = authHeader.split("Bearer ")[1];
+       // String token = authHeader.split("Bearer ")[1];  creates regex->creates array->slightly heavier
+        String token = authHeader.substring(7);
         Claims claims = jwtUtil.validateToken(token);
 
         if (claims == null) {

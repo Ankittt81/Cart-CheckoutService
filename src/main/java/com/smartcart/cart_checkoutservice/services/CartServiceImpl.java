@@ -16,12 +16,12 @@ import java.util.Optional;
 public class CartServiceImpl implements CartService{
     private CartRepository cartRepository;
     private CartMapper  cartMapper;
-    private SequenceGeneratorService sequenceGenerator;
 
-    public CartServiceImpl(CartRepository cartRepository,CartMapper cartMapper,SequenceGeneratorService sequenceGenerator) {
+
+    public CartServiceImpl(CartRepository cartRepository,CartMapper cartMapper) {
         this.cartRepository = cartRepository;
         this.cartMapper = cartMapper;
-        this.sequenceGenerator = sequenceGenerator;
+
     }
 
     @Override
@@ -34,7 +34,7 @@ public class CartServiceImpl implements CartService{
         if(cartOptional.isEmpty()){
             cart=new Cart();
             cart.setUserId(userId);
-            cart.setId(sequenceGenerator.generateSequence("cart_sequence"));
+            cart.setCartStatus(CartStatus.ACTIVE);
         }else cart=cartOptional.get();
 
         //2. Fetching CartItems from Cart and Check the item ia adding is already exist or not
@@ -53,7 +53,7 @@ public class CartServiceImpl implements CartService{
                 .mapToDouble(i ->i.getPriceSnapshot()*i.getQuantity())
                 .sum();
         cart.setTotalAmount(total);
-        cart.setCartStatus(CartStatus.ACTIVE);
+
 
         return cartMapper.toDto(cartRepository.save(cart));
     }

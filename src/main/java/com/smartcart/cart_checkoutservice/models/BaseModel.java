@@ -13,10 +13,8 @@ import java.util.Date;
 @Setter
 
 public abstract class BaseModel {
-    @Id
-    private Long id;
     @CreatedDate
     private Date createdAt;
     @LastModifiedDate
-    private Date LastModifiedAt;
+    private Date lastModifiedAt;
 }
