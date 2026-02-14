@@ -11,7 +11,6 @@ import lombok.Setter;
 public class AddItemToCartRequest {
     @NotNull
     private Long variantId;
-    private Double priceSnapshot;
     @NotNull
     @Min(1)
     private Integer quantity;

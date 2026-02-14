@@ -4,13 +4,16 @@ package com.smartcart.cart_checkoutservice.models;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.Date;
+
 @Getter
 @Setter
-public class CartItem extends BaseModel {
-    private Cart cart;
+public class CartItem {
     private Long variantId;
     private Integer quantity;
     private Double priceSnapshot;
+    private String productName;
+    private Date addedAt;
 
 }
 

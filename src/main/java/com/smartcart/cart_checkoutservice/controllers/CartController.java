@@ -1,9 +1,8 @@
 package com.smartcart.cart_checkoutservice.controllers;
 
 import com.smartcart.cart_checkoutservice.dtos.AddItemToCartRequest;
-import com.smartcart.cart_checkoutservice.dtos.CartItemResponse;
+import com.smartcart.cart_checkoutservice.dtos.CartResponse;
 import com.smartcart.cart_checkoutservice.services.CartService;
-import io.jsonwebtoken.Jwt;
 import jakarta.validation.Valid;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,7 +20,7 @@ public class CartController {
     }
 
     @PostMapping("/items")
-    public CartItemResponse addItemToCart(@AuthenticationPrincipal Long userId,@Valid @RequestBody AddItemToCartRequest addItemToCartRequest) {
-        return cartService.addItem(userId, addItemToCartRequest);
+    public CartResponse addItemToCart(@AuthenticationPrincipal Long userId,@AuthenticationPrincipal String userName, @Valid @RequestBody AddItemToCartRequest addItemToCartRequest) {
+        return cartService.addItem(userId,userName, addItemToCartRequest);
     }
 }

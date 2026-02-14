@@ -1,8 +1,9 @@
 package com.smartcart.cart_checkoutservice.services;
 
-import com.smartcart.cart_checkoutservice.configs.SequenceGeneratorService;
+import com.smartcart.cart_checkoutservice.client.ProductClient;
+import com.smartcart.cart_checkoutservice.client.VariantResponseDto;
 import com.smartcart.cart_checkoutservice.dtos.AddItemToCartRequest;
-import com.smartcart.cart_checkoutservice.dtos.CartItemResponse;
+import com.smartcart.cart_checkoutservice.dtos.CartResponse;
 import com.smartcart.cart_checkoutservice.mappers.CartMapper;
 import com.smartcart.cart_checkoutservice.models.Cart;
 import com.smartcart.cart_checkoutservice.models.CartItem;
@@ -16,17 +17,19 @@ import java.util.Optional;
 public class CartServiceImpl implements CartService{
     private CartRepository cartRepository;
     private CartMapper  cartMapper;
+    private final ProductClient  productClient;
 
 
-    public CartServiceImpl(CartRepository cartRepository,CartMapper cartMapper) {
+    public CartServiceImpl(CartRepository cartRepository,CartMapper cartMapper,ProductClient productClient) {
         this.cartRepository = cartRepository;
         this.cartMapper = cartMapper;
-
+        this.productClient = productClient;
     }
 
     @Override
-    public CartItemResponse addItem(Long userId,AddItemToCartRequest addItemToCartRequest) {
-        CartItem newItem = cartMapper.toEntity(addItemToCartRequest);
+    public CartResponse addItem(Long userId,String userName, AddItemToCartRequest addItemToCartRequest) {
+        VariantResponseDto variant=productClient.getVariantByVariantId(addItemToCartRequest.getVariantId());
+        CartItem newItem = cartMapper.toEntity(addItemToCartRequest.getQuantity(),variant);
 
         //1. first find cart of user if present else create new one
         Cart cart=null;
@@ -34,6 +37,7 @@ public class CartServiceImpl implements CartService{
         if(cartOptional.isEmpty()){
             cart=new Cart();
             cart.setUserId(userId);
+            cart.setUserName(userName);
             cart.setCartStatus(CartStatus.ACTIVE);
         }else cart=cartOptional.get();
 

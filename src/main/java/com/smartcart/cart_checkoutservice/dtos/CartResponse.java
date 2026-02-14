@@ -10,9 +10,9 @@ import java.util.List;
 
 @Getter
 @Setter
-public class CartItemResponse {
-    private Long userId;
-    private Long cartId;
+public class CartResponse {
+    private Long _id;
+    private String user_name;
     private List<CartItem> cartItems=new ArrayList<>();
     private Double totalAmount=0.0;
     private CartStatus status;
