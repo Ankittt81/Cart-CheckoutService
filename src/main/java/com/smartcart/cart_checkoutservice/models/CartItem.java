@@ -4,6 +4,7 @@ package com.smartcart.cart_checkoutservice.models;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.util.Date;
 
 @Getter
@@ -11,7 +12,7 @@ import java.util.Date;
 public class CartItem {
     private Long variantId;
     private Integer quantity;
-    private Double priceSnapshot;
+    private BigDecimal priceSnapshot;
     private String productName;
     private Date addedAt;
 

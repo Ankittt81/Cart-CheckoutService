@@ -7,6 +7,7 @@ import com.smartcart.cart_checkoutservice.models.Cart;
 import com.smartcart.cart_checkoutservice.models.CartItem;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
 import java.util.Date;
 
 @Component
@@ -16,7 +17,7 @@ public class CartMapper {
         CartItem cartItem = new CartItem();
        cartItem.setVariantId(variant.getVariantId());
        cartItem.setQuantity(Quantity);
-       cartItem.setPriceSnapshot(variant.getPrice());
+       cartItem.setPriceSnapshot(BigDecimal.valueOf(variant.getPrice()));
        cartItem.setProductName(variant.getProductTitle());
        cartItem.setAddedAt(new Date());
         return cartItem;

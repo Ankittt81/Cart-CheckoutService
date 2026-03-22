@@ -5,6 +5,7 @@ import com.smartcart.cart_checkoutservice.models.CartStatus;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,6 +15,6 @@ public class CartResponse {
     private Long _id;
     private String user_name;
     private List<CartItem> cartItems=new ArrayList<>();
-    private Double totalAmount=0.0;
+    private BigDecimal totalAmount=BigDecimal.ZERO;
     private CartStatus status;
 }

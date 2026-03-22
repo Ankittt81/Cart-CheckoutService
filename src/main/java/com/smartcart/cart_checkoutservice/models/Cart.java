@@ -9,6 +9,8 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -22,11 +24,11 @@ public class Cart {
     private String userName;
     private CartStatus cartStatus;
     private List<CartItem> cartItems=new ArrayList<>();
-    private Double totalAmount=0.0;
+    private BigDecimal totalAmount = BigDecimal.ZERO;
     @CreatedDate
-    private Date createdAt;
+    private LocalDateTime createdAt;
     @LastModifiedDate
-    private Date lastModifiedAt;
+    private LocalDateTime lastModifiedAt;
 }
 
 
