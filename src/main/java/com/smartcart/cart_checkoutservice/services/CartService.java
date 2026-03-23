@@ -1,9 +1,6 @@
 package com.smartcart.cart_checkoutservice.services;
 
-import com.smartcart.cart_checkoutservice.dtos.AddItemToCartRequest;
-import com.smartcart.cart_checkoutservice.dtos.CartResponse;
-import com.smartcart.cart_checkoutservice.dtos.CartSummaryDto;
-import com.smartcart.cart_checkoutservice.dtos.CartValidationResponse;
+import com.smartcart.cart_checkoutservice.dtos.*;
 
 public interface CartService {
      CartResponse addItem(Long userId,String userName, AddItemToCartRequest addItemToCartRequest);
@@ -13,5 +10,6 @@ public interface CartService {
     void removeItem(Long userId,Long variantId);
     void clearCart(Long userId);
     CartSummaryDto  getCartSummary(Long userId);
+    CartValidationResult validateCartInternal(Long userId);
 
 }

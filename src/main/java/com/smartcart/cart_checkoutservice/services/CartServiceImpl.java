@@ -4,10 +4,7 @@ import com.smartcart.cart_checkoutservice.client.InventoryClient;
 import com.smartcart.cart_checkoutservice.client.ProductClient;
 import com.smartcart.cart_checkoutservice.client.InventoryResponseDto;
 import com.smartcart.cart_checkoutservice.client.VariantResponseDto;
-import com.smartcart.cart_checkoutservice.dtos.AddItemToCartRequest;
-import com.smartcart.cart_checkoutservice.dtos.CartResponse;
-import com.smartcart.cart_checkoutservice.dtos.CartSummaryDto;
-import com.smartcart.cart_checkoutservice.dtos.CartValidationResponse;
+import com.smartcart.cart_checkoutservice.dtos.*;
 import com.smartcart.cart_checkoutservice.mappers.CartMapper;
 import com.smartcart.cart_checkoutservice.models.Cart;
 import com.smartcart.cart_checkoutservice.models.CartItem;
@@ -86,6 +83,8 @@ public class CartServiceImpl implements CartService{
         return cartMapper.toDto(cartOptional.get());
     }
 
+
+
     public CartResponse updateItem(Long userId,Long variantId,Integer quantity) {
        if(quantity<0){
            throw new IllegalArgumentException("Quantity cannot be negative");
@@ -141,8 +140,8 @@ public class CartServiceImpl implements CartService{
         cart.setCartStatus(CartStatus.ABANDONED);
     }
 
-    @Override
-    public CartValidationResponse validateCart(Long userId) {
+
+    public CartValidationResult validateCartInternal(Long userId) {
         Optional<Cart> cartOptional = cartRepository.findByUserId(userId);
         if(cartOptional.isEmpty()){
             throw new RuntimeException("Cart not found");
@@ -194,10 +193,19 @@ public class CartServiceImpl implements CartService{
         Cart updatedCart=cartRepository.save(cart);
 
         // 8. Prepare response
+        CartValidationResult cartValidationResult=new CartValidationResult();
+        cartValidationResult.setIssues(issues);
+        cartValidationResult.setUpdatedcart(updatedCart);
+        return cartValidationResult;
+    }
+    @Override
+    public CartValidationResponse validateCart(Long userId) {
+        CartValidationResult result=validateCartInternal(userId);
+
         CartValidationResponse response=new CartValidationResponse();
-        response.setValid(issues.isEmpty());
-        response.setIssues(issues);
-        response.setUpdatedCart(cartMapper.toDto(updatedCart));
+        response.setValid(result.getIssues().isEmpty());
+        response.setIssues(result.getIssues());
+        response.setUpdatedCart(cartMapper.toDto(result.getUpdatedcart()));
         return response;
     }
 
