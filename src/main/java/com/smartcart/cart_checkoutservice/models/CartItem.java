@@ -5,16 +5,19 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.math.BigDecimal;
-import java.util.Date;
+import java.time.LocalDateTime;
+import java.util.Map;
 
 @Getter
 @Setter
 public class CartItem {
     private Long variantId;
+    private Long productId;
     private Integer quantity;
     private BigDecimal priceSnapshot;
     private String productName;
-    private Date addedAt;
+    private Map<String,String> attributes;
+    private LocalDateTime addedAt;
 
 }
 

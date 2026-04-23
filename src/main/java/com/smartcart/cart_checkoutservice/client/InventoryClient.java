@@ -8,9 +8,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 @FeignClient(name = "inventory-service",url = "${inventory.service.url}")
 public interface InventoryClient {
-    @GetMapping("/{variantId}")
+    @GetMapping("/inventory/{variantId}")
     InventoryResponseDto checkStock(@PathVariable("variantId") Long variantId);
 
-    @PostMapping("/reserve")
+    @PostMapping("/inventory/reserve")
     boolean reserveStock(@RequestBody ReserveStockRequestDto reserveStockRequestDto);
 }

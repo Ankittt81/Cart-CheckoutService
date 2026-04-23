@@ -42,7 +42,7 @@ public class CartServiceImpl implements CartService{
 
         //1. first find cart of user if present else create new one
         Cart cart=null;
-        Optional<Cart> cartOptional = cartRepository.findByUserId(userId);
+        Optional<Cart> cartOptional = cartRepository.findByUserIdAndCartStatus(userId,CartStatus.ACTIVE);
         if(cartOptional.isEmpty()){
             cart=new Cart();
             cart.setUserId(userId);
@@ -75,7 +75,7 @@ public class CartServiceImpl implements CartService{
 
     @Override
     public CartResponse getCart(Long userId) {
-        Optional<Cart> cartOptional = cartRepository.findByUserId(userId);
+        Optional<Cart> cartOptional = cartRepository.findByUserIdAndCartStatus(userId,CartStatus.ACTIVE);
         if(cartOptional.isEmpty()){
             throw new RuntimeException("Cart not found");
         }
@@ -83,13 +83,11 @@ public class CartServiceImpl implements CartService{
         return cartMapper.toDto(cartOptional.get());
     }
 
-
-
     public CartResponse updateItem(Long userId,Long variantId,Integer quantity) {
        if(quantity<0){
            throw new IllegalArgumentException("Quantity cannot be negative");
        }
-       Optional<Cart> cartOptional = cartRepository.findByUserId(userId);
+       Optional<Cart> cartOptional = cartRepository.findByUserIdAndCartStatus(userId,CartStatus.ACTIVE);
        if(cartOptional.isEmpty()){
            throw new RuntimeException("Cart not found");
        }
@@ -118,7 +116,7 @@ public class CartServiceImpl implements CartService{
     }
 
     public void removeItem(Long userId,Long variantId) {
-        Optional<Cart> cartOptional = cartRepository.findByUserId(userId);
+        Optional<Cart> cartOptional = cartRepository.findByUserIdAndCartStatus(userId,CartStatus.ACTIVE);
         if(cartOptional.isEmpty()){
             throw new RuntimeException("Cart not found");
         }
@@ -132,7 +130,7 @@ public class CartServiceImpl implements CartService{
     }
 
     public void clearCart(Long userId){
-        Optional<Cart> cartOptional = cartRepository.findByUserId(userId);
+        Optional<Cart> cartOptional = cartRepository.findByUserIdAndCartStatus(userId,CartStatus.ACTIVE);
         if(cartOptional.isEmpty()){
             throw new RuntimeException("Cart not found");
         }
@@ -140,12 +138,12 @@ public class CartServiceImpl implements CartService{
         cart.setCartStatus(CartStatus.ABANDONED);
     }
 
-
     public CartValidationResult validateCartInternal(Long userId) {
-        Optional<Cart> cartOptional = cartRepository.findByUserId(userId);
+        Optional<Cart> cartOptional = cartRepository.findByUserIdAndCartStatus(userId,CartStatus.ACTIVE);
         if(cartOptional.isEmpty()){
             throw new RuntimeException("Cart not found");
         }
+        System.out.println("Fetched user cart ");
         Cart cart=cartOptional.get();
         List<String> issues=new ArrayList<>();
         List<CartItem> validItems=new ArrayList<>();
@@ -153,17 +151,24 @@ public class CartServiceImpl implements CartService{
         for(CartItem item:cart.getCartItems()){
             try{
                 // 1. Product Service call
+
                 VariantResponseDto variant=productClient.getVariantByVariantId(item.getVariantId());
+
                 if(variant==null){
                     issues.add("Item removed: product not found (variantId: " + item.getVariantId() + ")");
                     continue;
                 }
+                System.out.println("Product Service called!");
                 // 2. Inventory Service call
                 InventoryResponseDto inventory=inventoryClient.checkStock(item.getVariantId());
+
+                System.out.println("Stock: " + inventory.getAvailableStock() +
+                        " Required: " + item.getQuantity());
                 if(inventory.getAvailableStock()<item.getQuantity()){
                     issues.add("Item removed: insufficient stock (variantId: " + item.getVariantId() + ")");
                     continue;
                 }
+
 
                 // 3. Price validation
                 BigDecimal currentPrice=BigDecimal.valueOf(variant.getPrice());
@@ -175,7 +180,9 @@ public class CartServiceImpl implements CartService{
                 validItems.add(item);
 
             }catch (Exception e){
+                e.printStackTrace();
                 issues.add("Item removed due to error (variantId: " + item.getVariantId() + ")");
+                throw e;
             }
         }
         // 5. Update cart items
@@ -198,6 +205,7 @@ public class CartServiceImpl implements CartService{
         cartValidationResult.setUpdatedcart(updatedCart);
         return cartValidationResult;
     }
+
     @Override
     public CartValidationResponse validateCart(Long userId) {
         CartValidationResult result=validateCartInternal(userId);
@@ -211,7 +219,7 @@ public class CartServiceImpl implements CartService{
 
     @Override
     public CartSummaryDto getCartSummary(Long userId) {
-        Optional<Cart> cartOptional = cartRepository.findByUserId(userId);
+        Optional<Cart> cartOptional = cartRepository.findByUserIdAndCartStatus(userId,CartStatus.ACTIVE);
         if(cartOptional.isEmpty()){
             throw new RuntimeException("Cart not found");
         }

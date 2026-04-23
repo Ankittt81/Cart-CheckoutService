@@ -37,15 +37,16 @@ public class JwtFilter extends OncePerRequestFilter {
             return;
         }
         Long userId = claims.get("userId", Long.class);
-        String userName = claims.get("name", String.class);
+        String userName = claims.get("username", String.class);
         List<String> roles = claims.get("roles", List.class);
 
         var authorities = roles.stream()
                 .map(SimpleGrantedAuthority::new)
                 .toList();
 
+        var principal=new UserPrincipal(userId,userName);
         var authenticate = new UsernamePasswordAuthenticationToken(
-                userId,
+                principal,
                 null,
                 authorities
         );

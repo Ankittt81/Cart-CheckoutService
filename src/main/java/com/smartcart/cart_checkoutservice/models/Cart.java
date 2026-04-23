@@ -20,6 +20,7 @@ import java.util.List;
 @Document(collection = "carts")
 public class Cart {
     @Id
+    private String cartId;
     private Long userId;
     private String userName;
     private CartStatus cartStatus;

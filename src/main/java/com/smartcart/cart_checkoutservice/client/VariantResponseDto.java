@@ -10,6 +10,7 @@ import java.util.Map;
 @Setter
 public class VariantResponseDto {
     private Long variantId;
+    private Long productId;
     private String productTitle;
     private String sku;
     private Map<String,String> attributes;

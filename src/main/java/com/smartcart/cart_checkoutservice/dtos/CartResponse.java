@@ -12,7 +12,8 @@ import java.util.List;
 @Getter
 @Setter
 public class CartResponse {
-    private Long _id;
+    private String cartId;
+    private Long userId;
     private String user_name;
     private List<CartItem> cartItems=new ArrayList<>();
     private BigDecimal totalAmount=BigDecimal.ZERO;

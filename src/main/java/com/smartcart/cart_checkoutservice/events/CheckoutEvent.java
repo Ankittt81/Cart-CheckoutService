@@ -10,7 +10,7 @@ import java.util.List;
 @Getter
 @Setter
 public class CheckoutEvent {
-    Long userId;
+    private Long userId;
     private List<CartItem> cartItems;
     private BigDecimal totalAmount;
 }
