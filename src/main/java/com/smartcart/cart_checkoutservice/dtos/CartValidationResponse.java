@@ -10,5 +10,5 @@ import java.util.List;
 public class CartValidationResponse {
     private boolean valid;
     private List<String> issues;
-    private CartResponse updatedCart;
+    private CartResponseDto updatedCart;
 }

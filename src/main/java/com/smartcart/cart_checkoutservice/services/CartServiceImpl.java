@@ -1,9 +1,6 @@
 package com.smartcart.cart_checkoutservice.services;
 
-import com.smartcart.cart_checkoutservice.client.InventoryClient;
-import com.smartcart.cart_checkoutservice.client.ProductClient;
-import com.smartcart.cart_checkoutservice.client.InventoryResponseDto;
-import com.smartcart.cart_checkoutservice.client.VariantResponseDto;
+import com.smartcart.cart_checkoutservice.client.*;
 import com.smartcart.cart_checkoutservice.dtos.*;
 import com.smartcart.cart_checkoutservice.mappers.CartMapper;
 import com.smartcart.cart_checkoutservice.models.Cart;
@@ -33,12 +30,15 @@ public class CartServiceImpl implements CartService{
     }
 
     @Override
-    public CartResponse addItem(Long userId,String userName, AddItemToCartRequest addItemToCartRequest) {
+    public CartResponseDto addItem(Long userId, String userName, AddItemToCartRequest addItemToCartRequest) {
         if (addItemToCartRequest.getQuantity() <= 0) {
             throw new IllegalArgumentException("Quantity must be greater than 0");
         }
-        VariantResponseDto variant=productClient.getVariantByVariantId(addItemToCartRequest.getVariantId());
-        CartItem newItem = cartMapper.toEntity(addItemToCartRequest.getQuantity(),variant);
+        ApiResponse<VariantResponseDto> response=productClient.getVariantByVariantId(addItemToCartRequest.getVariantId());
+        VariantResponseDto variant=response.getData();
+        ApiResponse<ProductResponseDto> responseProduct=productClient.getSingleProduct(variant.getProductId());
+        ProductResponseDto product=responseProduct.getData();
+        InventoryResponseDto inventory=inventoryClient.checkStock(variant.getVariantId());
 
         //1. first find cart of user if present else create new one
         Cart cart=null;
@@ -50,48 +50,47 @@ public class CartServiceImpl implements CartService{
             cart.setCartStatus(CartStatus.ACTIVE);
         }else cart=cartOptional.get();
 
-        //2. Fetching CartItems from Cart and Check the item ia adding is already exist or not
+        //2. Fetching CartItems from Cart and Check the item is adding is already exist or not
         Optional<CartItem> existingItem=cart.getCartItems()
                 .stream()
-                .filter(item ->item.getVariantId().equals(newItem.getVariantId()))
+                .filter(item ->item.getVariantId().equals(variant.getVariantId()))
                 .findFirst();
 
         //3. If exist then add quantity else add item to cart
         if(existingItem.isPresent()){
             CartItem cartItem=existingItem.get();
-            cartItem.setQuantity(cartItem.getQuantity()+newItem.getQuantity());
-        }else cart.getCartItems().add(newItem);
+            int updatedQuantity=cartItem.getQuantity()+addItemToCartRequest.getQuantity();
+            if(inventory.getAvailableStock()<updatedQuantity){
+                throw new RuntimeException("Not enough stock");
+            }
+            cartItem.setQuantity(cartItem.getQuantity()+addItemToCartRequest.getQuantity());
+        }else{
+            CartItem newItem = cartMapper.toEntity(addItemToCartRequest.getQuantity(),variant,product);
+            cart.getCartItems().add(newItem);
+        }
 
         // 4. Recalculate total
         BigDecimal total = cart.getCartItems().stream()
-                .map(item -> item.getPriceSnapshot()
+                .map(item -> item.getPriceAtAddition()
                         .multiply(BigDecimal.valueOf(item.getQuantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         cart.setTotalAmount(total);
-
-
         return cartMapper.toDto(cartRepository.save(cart));
     }
 
     @Override
-    public CartResponse getCart(Long userId) {
-        Optional<Cart> cartOptional = cartRepository.findByUserIdAndCartStatus(userId,CartStatus.ACTIVE);
-        if(cartOptional.isEmpty()){
-            throw new RuntimeException("Cart not found");
-        }
-
-        return cartMapper.toDto(cartOptional.get());
+    public CartResponseDto getCart(Long userId) {
+        Cart cart = cartRepository.findByUserIdAndCartStatus(userId,CartStatus.ACTIVE)
+                .orElseThrow(()->new RuntimeException("Cart not found"));
+        return cartMapper.toDto(cart);
     }
 
-    public CartResponse updateItem(Long userId,Long variantId,Integer quantity) {
+    public CartResponseDto updateItem(Long userId, Long variantId, Integer quantity) {
        if(quantity<0){
            throw new IllegalArgumentException("Quantity cannot be negative");
        }
-       Optional<Cart> cartOptional = cartRepository.findByUserIdAndCartStatus(userId,CartStatus.ACTIVE);
-       if(cartOptional.isEmpty()){
-           throw new RuntimeException("Cart not found");
-       }
-       Cart cart=cartOptional.get();
+       Cart cart = cartRepository.findByUserIdAndCartStatus(userId,CartStatus.ACTIVE)
+               .orElseThrow(()->new RuntimeException("Cart not found"));
 
        CartItem item=cart.getCartItems().stream()
                .filter(i ->i.getVariantId().equals(variantId))
@@ -105,8 +104,8 @@ public class CartServiceImpl implements CartService{
        }
 
        BigDecimal total=cart.getCartItems().stream()
-               .map(i->i.getPriceSnapshot()
-                       .multiply(BigDecimal.valueOf(item.getQuantity())))
+               .map(i->i.getPriceAtAddition()
+                       .multiply(BigDecimal.valueOf(i.getQuantity())))
                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
        cart.setTotalAmount(total);
@@ -136,6 +135,7 @@ public class CartServiceImpl implements CartService{
         }
         Cart cart=cartOptional.get();
         cart.setCartStatus(CartStatus.ABANDONED);
+        cartRepository.save(cart);
     }
 
     public CartValidationResult validateCartInternal(Long userId) {
@@ -152,8 +152,8 @@ public class CartServiceImpl implements CartService{
             try{
                 // 1. Product Service call
 
-                VariantResponseDto variant=productClient.getVariantByVariantId(item.getVariantId());
-
+                ApiResponse<VariantResponseDto> response=productClient.getVariantByVariantId(item.getVariantId());
+                VariantResponseDto variant=response.getData();
                 if(variant==null){
                     issues.add("Item removed: product not found (variantId: " + item.getVariantId() + ")");
                     continue;
@@ -172,8 +172,8 @@ public class CartServiceImpl implements CartService{
 
                 // 3. Price validation
                 BigDecimal currentPrice=BigDecimal.valueOf(variant.getPrice());
-                if(!item.getPriceSnapshot().equals(currentPrice)){
-                    item.setPriceSnapshot(currentPrice);
+                if(!item.getPriceAtAddition().equals(currentPrice)){
+                    item.setPriceAtAddition(currentPrice);
                     issues.add("Price updated for variantId: " + item.getVariantId());
                 }
                 // 4. Keep valid item
@@ -190,7 +190,7 @@ public class CartServiceImpl implements CartService{
 
         // 6. Recalculate total
         BigDecimal total=cart.getCartItems().stream()
-                .map(i->i.getPriceSnapshot()
+                .map(i->i.getPriceAtAddition()
                         .multiply(BigDecimal.valueOf(i.getQuantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
@@ -229,7 +229,7 @@ public class CartServiceImpl implements CartService{
                 .reduce(0,Integer::sum);
 
         CartSummaryDto summary=new CartSummaryDto();
-        summary.set_id(cart.getUserId());
+        summary.setCartId(cart.getCartId());
         summary.setTotalAmount(cart.getTotalAmount());
         summary.setTotalItems(cart.getCartItems().size());
         summary.setTotalQuantity(quantity);

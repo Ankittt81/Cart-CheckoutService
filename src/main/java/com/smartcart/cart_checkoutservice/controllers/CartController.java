@@ -1,8 +1,10 @@
 package com.smartcart.cart_checkoutservice.controllers;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.smartcart.cart_checkoutservice.dtos.AddItemToCartRequest;
-import com.smartcart.cart_checkoutservice.dtos.CartResponse;
+import com.smartcart.cart_checkoutservice.dtos.ApiResponse;
+import com.smartcart.cart_checkoutservice.dtos.CartResponseDto;
+import com.smartcart.cart_checkoutservice.dtos.CheckoutRequestDto;
+import com.smartcart.cart_checkoutservice.models.Cart;
 import com.smartcart.cart_checkoutservice.security.UserPrincipal;
 import com.smartcart.cart_checkoutservice.services.CartService;
 import com.smartcart.cart_checkoutservice.services.CheckoutService;
@@ -23,13 +25,20 @@ public class CartController {
     }
 
     @PostMapping("/items")
-    public CartResponse addItemToCart(@AuthenticationPrincipal UserPrincipal user,@Valid @RequestBody AddItemToCartRequest addItemToCartRequest) {
-        return cartService.addItem(user.getUserId(), user.getUsername(), addItemToCartRequest);
+    public ResponseEntity<ApiResponse> addItemToCart(@AuthenticationPrincipal UserPrincipal user, @Valid @RequestBody AddItemToCartRequest addItemToCartRequest) {
+        CartResponseDto response= cartService.addItem(user.getUserId(), user.getUsername(), addItemToCartRequest);
+        return ResponseEntity.ok(new ApiResponse("success", response));
     }
 
-    @GetMapping("/checkout")
-    public ResponseEntity<String> checkout(@AuthenticationPrincipal UserPrincipal user){
-       String response= checkoutService.checkout(user.getUserId());
-        return ResponseEntity.ok().body(response);
+    @GetMapping()
+    public ResponseEntity<ApiResponse> getCart(@AuthenticationPrincipal UserPrincipal user) {
+        CartResponseDto response= cartService.getCart(user.getUserId());
+        return ResponseEntity.ok(new ApiResponse("success", response));
+    }
+
+    @PostMapping("/checkout")
+    public ResponseEntity<ApiResponse> checkout(@AuthenticationPrincipal UserPrincipal user,@RequestBody CheckoutRequestDto request) {
+       String response= checkoutService.checkout(user.getUserId(), request.getAddressId());
+        return ResponseEntity.ok(new ApiResponse<>("Checkout Successfull", response));
     }
 }

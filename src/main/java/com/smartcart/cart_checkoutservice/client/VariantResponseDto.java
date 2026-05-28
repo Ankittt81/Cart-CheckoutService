@@ -11,7 +11,6 @@ import java.util.Map;
 public class VariantResponseDto {
     private Long variantId;
     private Long productId;
-    private String productTitle;
     private String sku;
     private Map<String,String> attributes;
     private Double price;

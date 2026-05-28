@@ -9,9 +9,8 @@ import java.math.BigDecimal;
 @Getter
 @Setter
 public class CartSummaryDto {
-    private Long _id;
+    private String cartId;
     private Integer totalItems;
     private Integer totalQuantity;
     private BigDecimal totalAmount=BigDecimal.ZERO;
-
 }

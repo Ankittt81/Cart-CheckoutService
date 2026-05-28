@@ -28,6 +28,7 @@ public class JwtFilter extends OncePerRequestFilter {
             httpServletResponse(response);
             return;
         }
+        System.out.println("AUTH HEADER: " + authHeader);
        // String token = authHeader.split("Bearer ")[1];  creates regex->creates array->slightly heavier
         String token = authHeader.substring(7);
         Claims claims = jwtUtil.validateToken(token);
@@ -36,9 +37,12 @@ public class JwtFilter extends OncePerRequestFilter {
             httpServletResponse(response);
             return;
         }
+        System.out.println("TOKEN VALIDATED");
         Long userId = claims.get("userId", Long.class);
         String userName = claims.get("username", String.class);
         List<String> roles = claims.get("roles", List.class);
+
+        System.out.println("USER ID: " + userId);
 
         var authorities = roles.stream()
                 .map(SimpleGrantedAuthority::new)

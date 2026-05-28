@@ -11,6 +11,8 @@ import java.util.List;
 @Setter
 public class CheckoutEvent {
     private Long userId;
+    private String checkoutId;
+    private ShippingAddress shippingAddress;
     private List<CartItem> cartItems;
     private BigDecimal totalAmount;
 }
